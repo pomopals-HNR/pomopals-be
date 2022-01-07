@@ -193,13 +193,13 @@ app.get("/tasks/:userid", async (req, res) => {
 // Toggle task state
 app.put("/tasks/:taskid", async (req, res) => {
   let { rows } = await db
-    .query(`UPDATE tasks SET state = NOT state WHERE taskid = $1`, [
+    .query(`UPDATE tasks SET state = NOT state WHERE taskid = $1 RETURNING *`, [
       req.params.taskid,
     ])
     .catch((err) => {
       res.status(400).send(err);
     });
-  res.status(200).send();
+  res.json(rows);
 });
 
 httpServer.listen(port, () => {
