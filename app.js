@@ -54,6 +54,26 @@ app.post("/google-login", async (req, res) => {
   return res.json(newUser.rows[0].userid);
 });
 
+/* Users Route */
+
+// Get all users
+app.get("/users", async (req, res) => {
+  let { rows } = await db.query(`SELECT * FROM users`).catch((err) => {
+    console.log(err);
+  });
+  res.json(rows);
+});
+
+// Get User by userid
+app.get("/users/:id", async (req, res) => {
+  let { rows } = await db
+    .query(`SELECT * FROM users WHERE userid=$1`, [req.params.id])
+    .catch((err) => {
+      console.log(err);
+    });
+  res.json(rows);
+});
+
 httpServer.listen(port, () => {
   console.log(`pomopals backend is running on port ${port}...`);
 });
