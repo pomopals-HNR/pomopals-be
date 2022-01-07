@@ -129,7 +129,24 @@ app.get("/rooms/:name", async (req, res) => {
     .catch((err) => {
       console.log(err);
     });
-  res.json(rows);
+
+  let userslist = await db
+    .query(
+      `SELECT *
+            FROM (SELECT ur.userid
+                  FROM users_rooms ur
+                  WHERE ur.roomname=$1) a
+            INNER JOIN users u
+            ON u.userid=a.userid`,
+      [req.params.name]
+    )
+    .catch((err) => {
+      res.status(400).send(err);
+    });
+  res.send({
+    ...rows[0],
+    users: userslist.rows,
+  });
 });
 
 // Returns room if it exists
@@ -141,7 +158,23 @@ app.post("/rooms/:ownerid/:name", async (req, res) => {
       console.log(err);
     });
   if (rows.length !== 0) {
-    res.json(rows);
+    let userslist = await db
+      .query(
+        `SELECT *
+            FROM (SELECT ur.userid
+                  FROM users_rooms ur
+                  WHERE ur.roomname=$1) a
+            INNER JOIN users u
+            ON u.userid=a.userid`,
+        [req.params.name]
+      )
+      .catch((err) => {
+        res.status(400).send(err);
+      });
+    res.send({
+      ...rows[0],
+      users: userslist.rows,
+    });
   } else {
     if (req.params.ownerid != 0) {
       let { rows } = await db
@@ -199,6 +232,28 @@ app.put("/rooms/isworking/:name", async (req, res) => {
       res.status(400).send(err);
     });
   res.json(rows);
+});
+
+// Get all users in a room
+app.get("/rooms/users/:roomname", async (req, res) => {
+  let userslist = await db
+    .query(
+      `SELECT *
+            FROM (SELECT ur.userid
+                  FROM users_rooms ur
+                  WHERE ur.roomname=$1) a
+            INNER JOIN users u
+            ON u.userid=a.userid`,
+      [req.params.roomname]
+    )
+    .catch((err) => {
+      res.status(400).send(err);
+    });
+  console.log(userslist.rows);
+  res.send({
+    name: "test",
+    users: userslist.rows,
+  });
 });
 
 /* Tasks Route */
