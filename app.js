@@ -74,6 +74,82 @@ app.get("/users/:id", async (req, res) => {
   res.json(rows);
 });
 
+/* Rooms Route */
+
+// Get all rooms
+app.get("/rooms", async (req, res) => {
+  let { rows } = await db.query(`SELECT * FROM rooms`).catch((err) => {
+    console.log(err);
+  });
+  res.json(rows);
+});
+
+// Get room by name
+app.get("/rooms/:name", async (req, res) => {
+  let { rows } = await db
+    .query(`SELECT * FROM rooms WHERE roomname=$1`, [req.params.name])
+    .catch((err) => {
+      console.log(err);
+    });
+  res.json(rows);
+});
+
+// Returns room if it exists
+// Else, creates a new room
+app.post("/rooms/:ownerid/:name", async (req, res) => {
+  let { rows } = await db
+    .query(`SELECT * FROM rooms WHERE roomname=$1`, [req.params.name])
+    .catch((err) => {
+      console.log(err);
+    });
+  if (rows.length !== 0) {
+    res.json(rows);
+  } else {
+    if (req.params.ownerid != 0) {
+      let { rows } = await db
+        .query(
+          `INSERT INTO rooms(roomOwner, roomName, state, worktime, breaktime)
+        VALUES ($1, $2, 0, 25, 5) RETURNING *;`,
+          [req.params.ownerid, req.params.name]
+        )
+        .catch((err) => {
+          res.status(400).send("Error! Check if room name is unique.");
+        });
+      res.json(rows);
+    } else {
+      const { rows } = await db
+        .query(
+          `INSERT INTO rooms(roomName, state, worktime, breaktime)
+        VALUES ($1, 0, 25, 5) RETURNING *;`,
+          [req.params.name]
+        )
+        .catch((err) => {
+          res.status(400).send("Error! Check if room name is unique.");
+        });
+      res.json(rows);
+    }
+  }
+});
+
+// Update room settings
+app.put("/rooms/:name", async (req, res) => {
+  let { worktime, breaktime } = req.body;
+  let password = req.body.password ? req.body.password : null;
+  let theme = req.body.theme ? req.body.theme : null;
+  const { rows } = await db
+    .query(
+      `UPDATE rooms
+       SET worktime=$1, breaktime=$2, password=$3, theme=$4
+       WHERE roomname=$5
+       RETURNING *`,
+      [worktime, breaktime, password, theme, req.params.name]
+    )
+    .catch((err) => {
+      res.status(400).send(err);
+    });
+  res.json(rows);
+});
+
 httpServer.listen(port, () => {
   console.log(`pomopals backend is running on port ${port}...`);
 });
