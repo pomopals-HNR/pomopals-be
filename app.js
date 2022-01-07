@@ -162,6 +162,46 @@ app.put("/rooms/:name", async (req, res) => {
   res.json(rows);
 });
 
+/* Tasks Route */
+
+// Add task for a user
+app.post("/tasks", async (req, res) => {
+  let { userid, taskname } = req.body;
+  const { rows } = await db
+    .query(
+      `INSERT INTO tasks(userid, taskname, state)
+       VALUES ($1, $2, 'f')
+       RETURNING *`,
+      [userid, taskname]
+    )
+    .catch((err) => {
+      res.status(400).send(err);
+    });
+  res.json(rows);
+});
+
+// Get all of users' tasks
+app.get("/tasks/:userid", async (req, res) => {
+  let { rows } = await db
+    .query(`SELECT * FROM tasks WHERE userid=$1`, [req.params.userid])
+    .catch((err) => {
+      res.status(400).send(err);
+    });
+  res.json(rows);
+});
+
+// Toggle task state
+app.put("/tasks/:taskid", async (req, res) => {
+  let { rows } = await db
+    .query(`UPDATE tasks SET state = NOT state WHERE taskid = $1`, [
+      req.params.taskid,
+    ])
+    .catch((err) => {
+      res.status(400).send(err);
+    });
+  res.status(200).send();
+});
+
 httpServer.listen(port, () => {
   console.log(`pomopals backend is running on port ${port}...`);
 });
