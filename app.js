@@ -120,8 +120,8 @@ app.post("/rooms/:ownerid/:name", async (req, res) => {
     if (req.params.ownerid != 0) {
       let { rows } = await db
         .query(
-          `INSERT INTO rooms(roomOwner, roomName, state, worktime, breaktime)
-        VALUES ($1, $2, 0, 25, 5) RETURNING *;`,
+          `INSERT INTO rooms(roomOwner, roomName, isworking, worktime, breaktime)
+        VALUES ($1, $2, 't', 25, 5) RETURNING *;`,
           [req.params.ownerid, req.params.name]
         )
         .catch((err) => {
@@ -131,8 +131,8 @@ app.post("/rooms/:ownerid/:name", async (req, res) => {
     } else {
       const { rows } = await db
         .query(
-          `INSERT INTO rooms(roomName, state, worktime, breaktime)
-        VALUES ($1, 0, 25, 5) RETURNING *;`,
+          `INSERT INTO rooms(roomName, isworking, worktime, breaktime)
+        VALUES ($1, 't', 25, 5) RETURNING *;`,
           [req.params.name]
         )
         .catch((err) => {
@@ -155,6 +155,19 @@ app.put("/rooms/:name", async (req, res) => {
        WHERE roomname=$5
        RETURNING *`,
       [worktime, breaktime, password, theme, req.params.name]
+    )
+    .catch((err) => {
+      res.status(400).send(err);
+    });
+  res.json(rows);
+});
+
+// Toggle room state
+app.put("/rooms/isworking/:name", async (req, res) => {
+  let { rows } = await db
+    .query(
+      `UPDATE rooms SET isworking = NOT isworking WHERE roomname = $1 RETURNING *`,
+      [req.params.name]
     )
     .catch((err) => {
       res.status(400).send(err);
