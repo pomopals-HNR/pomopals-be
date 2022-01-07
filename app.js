@@ -20,6 +20,18 @@ const client = new OAuth2Client(process.env.REACT_APP_GOOGLE_CLIENT_ID);
 app.use(cors());
 app.use(bodyParser.json());
 
+/* Socket!!! */
+io.on("connection", (socket) => {
+  console.log("new connection");
+  socket.on("join-room", (message) => {
+    io.emit(
+      "prompt-join",
+      `${message.username} joined room ${message.roomName}`
+    );
+    console.log(`${message.username} joined room ${message.roomName}`);
+  });
+});
+
 /* --------------- */
 
 app.get("/", function (req, res) {
