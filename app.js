@@ -24,16 +24,20 @@ app.use(bodyParser.json());
 io.on("connection", (socket) => {
   console.log("new connection");
   socket.on("joinRoom", (message, callback) => {
+    // dictate socket room
     socket.join(message.roomName);
-    callback("You have joined the room.");
-    socket
-      .to(message.roomName)
-      .emit(
-        "promptJoin",
-        `${message.username} joined room ${message.roomName}`
-      );
+    callback();
+
+    // inform other people of your arrival
+    socket.to(message.roomName).emit("promptJoin", message);
     console.log(`${message.username} joined room ${message.roomName}`);
   });
+
+  socket.on("sendMessage", (message, callback) => {
+    socket.to(message.roomName).emit("receiveMessage", message);
+    callback();
+  });
+
   socket.on("disconnect", () => {
     console.log(socket.id + " has left");
   });
