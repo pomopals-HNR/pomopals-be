@@ -26,6 +26,34 @@ app.get("/", function (req, res) {
   res.send("Welcome to Pomopals!");
 });
 
+// Login Route
+app.post("/google-login", async (req, res) => {
+  const { token } = req.body;
+  const ticket = await client.verifyIdToken({
+    idToken: token,
+    audience: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+  });
+  const payload = ticket.getPayload();
+  const { sub, name, email, picture } = payload;
+  let newUser = await db
+    .query(
+      `INSERT INTO users (
+      googleId, name, email, profilePicture, reaction) VALUES
+      ($1, $2, $3, $4, 'READY')
+      ON CONFLICT (googleId)
+      DO UPDATE SET
+      name = $2,
+      email = $3,
+      profilePicture = $4
+      RETURNING *;`,
+      [sub, name, email, picture]
+    )
+    .catch((err) => {
+      console.log(err);
+    });
+  return res.json(newUser.rows[0].userid);
+});
+
 httpServer.listen(port, () => {
   console.log(`pomopals backend is running on port ${port}...`);
 });
