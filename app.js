@@ -23,12 +23,19 @@ app.use(bodyParser.json());
 /* Socket!!! */
 io.on("connection", (socket) => {
   console.log("new connection");
-  socket.on("join-room", (message) => {
-    io.emit(
-      "prompt-join",
-      `${message.username} joined room ${message.roomName}`
-    );
+  socket.on("joinRoom", (message, callback) => {
+    socket.join(message.roomName);
+    callback("You have joined the room.");
+    socket
+      .to(message.roomName)
+      .emit(
+        "promptJoin",
+        `${message.username} joined room ${message.roomName}`
+      );
     console.log(`${message.username} joined room ${message.roomName}`);
+  });
+  socket.on("disconnect", () => {
+    console.log(socket.id + " has left");
   });
 });
 
@@ -59,6 +66,21 @@ app.post("/google-login", async (req, res) => {
       profilePicture = $4
       RETURNING *;`,
       [sub, name, email, picture]
+    )
+    .catch((err) => {
+      console.log(err);
+    });
+  return res.json(newUser.rows[0].userid);
+});
+
+app.post("/guest-login/:name", async (req, res) => {
+  let newUser = await db
+    .query(
+      `INSERT INTO users (
+      name, email, reaction) VALUES
+      ($1, '0', 'READY')
+      RETURNING *;`,
+      [req.params.name]
     )
     .catch((err) => {
       console.log(err);
