@@ -38,6 +38,11 @@ io.on("connection", (socket) => {
     callback();
   });
 
+  socket.on("startTimer", (roomname, callback) => {
+    socket.to(roomname).emit("startTimer");
+    callback();
+  });
+
   socket.on("disconnect", () => {
     console.log(socket.id + " has left");
   });
@@ -249,11 +254,27 @@ app.get("/rooms/users/:roomname", async (req, res) => {
     .catch((err) => {
       res.status(400).send(err);
     });
-  console.log(userslist.rows);
   res.send({
-    name: "test",
     users: userslist.rows,
   });
+});
+
+// insert user into room
+app.post("/rooms/join/:userid/:roomname", async (req, res) => {
+  let { rows } = await db
+    .query(
+      `INSERT INTO users_rooms (userid, roomname) 
+    VALUES ($1, $2)
+    ON CONFLICT (userid)
+    DO UPDATE SET
+    roomname = $2
+    RETURNING *;`,
+      [req.params.userid, req.params.roomname]
+    )
+    .catch((err) => {
+      res.status(400).send(err);
+    });
+  res.json(rows);
 });
 
 /* Tasks Route */
